@@ -1,0 +1,168 @@
+name: "Preview - Codespace Environment"
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch to deploy in preview"
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "pom.xml"
+      - ".devcontainer/**"
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy (default: main)"
+        required: false
+        default: "main"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    name: "Start Preview API"
+    runs-on: ubuntu-latest
+    outputs:
+      api_url: ${{ steps.url.outputs.url }}
+    steps:
+      - name: Delete previous Codespaces for the repository
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+        run: |
+          EXISTING=$(gh codespace list --repo "${{ github.repository }}" --json name --jq '.[].name')
+          if [ -z "$EXISTING" ]; then
+            echo "No previous Codespaces found."
+          else
+            echo "$EXISTING" | while IFS= read -r cs; do
+              gh codespace delete --codespace "$cs" --force || true
+            done
+          fi
+
+      - name: Create Codespace
+        id: create
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+        run: |
+          BRANCH="${{ inputs.branch || 'main' }}"
+
+          gh codespace create \
+            --repo "${{ github.repository }}" \
+            --branch "${BRANCH}" \
+            --idle-timeout 30m \
+            --retention-period 2h \
+            --machine basicLinux32gb
+
+          NAME=$(gh codespace list --repo "${{ github.repository }}" --json name --jq '.[0].name')
+          echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for Codespace readiness
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+          CS_NAME: ${{ steps.create.outputs.name }}
+        run: |
+          READY=false
+          for i in $(seq 1 24); do
+            STATE=$(gh codespace list --json name,state | jq -r --arg n "$CS_NAME" '.[] | select(.name==$n) | .state')
+            echo "[${i}/24] state: ${STATE}"
+            if [ "$STATE" = "Available" ]; then
+              READY=true
+              break
+            fi
+            sleep 15
+          done
+
+          if [ "$READY" != "true" ]; then
+            echo "::error::Codespace did not reach Available state."
+            exit 1
+          fi
+
+      - name: Wait for Spring Boot to expose port 8000
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+          CS_NAME: ${{ steps.create.outputs.name }}
+        run: |
+          for i in $(seq 1 36); do
+            PORTS=$(gh codespace ports -c "$CS_NAME" --json sourcePort --jq '.[].sourcePort' 2>/dev/null || echo "")
+            if echo "$PORTS" | grep -q "8000"; then
+              echo "[${i}/36] Port 8000 detected."
+              break
+            fi
+            echo "[${i}/36] Port 8000 not visible yet."
+            sleep 10
+          done
+
+      - name: Expose port 8000 publicly
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+          CS_NAME: ${{ steps.create.outputs.name }}
+        run: gh codespace ports visibility 8000:public -c "$CS_NAME"
+
+      - name: Obtain preview URL and verify health
+        id: url
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+          CS_NAME: ${{ steps.create.outputs.name }}
+        run: |
+          URL=$(gh codespace ports -c "$CS_NAME" --json sourcePort,browseUrl | jq -r '.[] | select(.sourcePort==8000) | .browseUrl')
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+          API_READY=false
+          for i in $(seq 1 24); do
+            STATUS=$(curl -s -o /tmp/preview-health.json -w "%{http_code}" "${URL}/health" || echo "000")
+            echo "[${i}/24] health HTTP ${STATUS}"
+            if [ "$STATUS" = "200" ]; then
+              API_READY=true
+              break
+            fi
+            sleep 10
+          done
+
+          if [ "$API_READY" != "true" ]; then
+            echo "::error::Preview API did not return HTTP 200 on /health."
+            exit 1
+          fi
+
+      - name: Publish preview summary
+        env:
+          API_URL: ${{ steps.url.outputs.url }}
+          CS_NAME: ${{ steps.create.outputs.name }}
+          SHA: ${{ github.sha }}
+        run: |
+          SHORT_SHA="${SHA:0:7}"
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ## Preview Environment Ready
+
+          > Commit \`${SHORT_SHA}\` is available in a temporary Codespace environment.
+
+          | | |
+          |---|---|
+          | **Base URL** | ${API_URL} |
+          | **Root** | ${API_URL}/ |
+          | **Health** | ${API_URL}/health |
+          | **Quote API** | ${API_URL}/api/v1/quotes |
+          | **Codespace** | \`${CS_NAME}\` |
+          EOF
+
+  functional-tests:
+    name: "Functional Tests"
+    needs: preview
+    if: needs.preview.outputs.api_url != ''
+    uses: ./.github/workflows/functional-tests.yml
+    with:
+      base_url: ${{ needs.preview.outputs.api_url }}
+    secrets: inherit
+
+  dast:
+    name: "DAST Scan"
+    needs: preview
+    if: needs.preview.outputs.api_url != ''
+    uses: ./.github/workflows/dast.yml
+    with:
+      base_url: ${{ needs.preview.outputs.api_url }}
+    secrets: inherit

@@ -1,0 +1,22 @@
+{
+  "name": "Maven CI/CD Security Reference",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Spring Boot",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "chmod +x mvnw && ./mvnw -q -DskipTests package && setsid bash -c 'nohup ./mvnw spring-boot:run > /tmp/spring.log 2>&1 & disown'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "redhat.vscode-xml"
+      ]
+    }
+  }
+}

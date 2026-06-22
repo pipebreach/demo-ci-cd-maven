@@ -1,0 +1,78 @@
+name: "Functional Tests - Post Deploy"
+
+on:
+  workflow_call:
+    inputs:
+      base_url:
+        description: "Base URL of the deployed API"
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL of the deployed API"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  functional-tests:
+    name: "Functional Tests Against Preview"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Smoke test health endpoint
+        env:
+          API_URL: ${{ inputs.base_url }}
+        run: |
+          STATUS=$(curl -s -o /tmp/health.json -w "%{http_code}" "${API_URL}/health")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Health endpoint returned HTTP ${STATUS}."
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          with open("/tmp/health.json", encoding="utf-8") as handle:
+              payload = json.load(handle)
+          assert payload["status"] == "ok", payload
+          PY
+
+      - name: Validate root metadata
+        env:
+          API_URL: ${{ inputs.base_url }}
+        run: |
+          STATUS=$(curl -s -o /tmp/root.json -w "%{http_code}" "${API_URL}/")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Root endpoint returned HTTP ${STATUS}."
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          with open("/tmp/root.json", encoding="utf-8") as handle:
+              payload = json.load(handle)
+          assert payload["service"] == "demo-ci-cd-maven", payload
+          assert payload["status"] == "ok", payload
+          PY
+
+      - name: Validate quote calculation
+        env:
+          API_URL: ${{ inputs.base_url }}
+        run: |
+          STATUS=$(curl -s -o /tmp/quote.json -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -d '{"amount": 200.00, "discountPercentage": 12.50, "currency": "USD"}' \
+            "${API_URL}/api/v1/quotes")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Quote endpoint returned HTTP ${STATUS}."
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from decimal import Decimal
+          with open("/tmp/quote.json", encoding="utf-8") as handle:
+              payload = json.load(handle)
+          assert Decimal(str(payload["discountAmount"])) == Decimal("25.00"), payload
+          assert Decimal(str(payload["finalAmount"])) == Decimal("175.00"), payload
+          assert payload["currency"] == "USD", payload
+          PY
