@@ -108,6 +108,14 @@ http://127.0.0.1:8000
 The preview workflow then runs functional validation and DAST against the pull
 request branch.
 
+`main-validation.yml` is the entry point for pushes to `main`. It runs:
+
+- `ci.yml`
+- `sast.yml`
+- `sca.yml`
+
+and only starts `preview.yml` after those checks succeed.
+
 ### CI
 
 `ci.yml` is reusable and provides:
@@ -137,9 +145,9 @@ Dependabot configuration is included in `.github/dependabot.yml`.
 
 ### Preview and post-deploy validation
 
-`preview.yml` creates a short-lived GitHub Codespace on pushes to `main` and
-can also be called from the pull request pipeline. It publishes a preview URL
-and triggers:
+`preview.yml` is reusable and manual. It is called by the PR pipeline and the
+main branch pipeline after the blocking checks succeed. It publishes a preview
+URL and triggers:
 
 - `functional-tests.yml`
 - `dast.yml`
