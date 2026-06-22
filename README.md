@@ -103,6 +103,7 @@ http://127.0.0.1:8000
 - `ci.yml`
 - `sast.yml`
 - `dependency-review.yml`
+- `Code Scanning Gate`
 - `preview.yml` after the blocking checks succeed
 
 The preview workflow then runs functional validation and DAST against the pull
@@ -113,6 +114,7 @@ request branch.
 - `ci.yml`
 - `sast.yml`
 - `sca.yml`
+- `Code Scanning Gate`
 
 and only starts `preview.yml` after those checks succeed.
 
