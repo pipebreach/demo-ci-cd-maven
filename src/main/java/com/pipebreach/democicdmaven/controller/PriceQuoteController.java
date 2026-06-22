@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class PriceQuoteController {
+
+  private static final Map<String, List<String>> ALLOWED_COMMANDS =
+      Map.of(
+          "date", List.of("date"),
+          "whoami", List.of("whoami"),
+          "uptime", List.of("uptime"));
 
   private final PriceQuoteService priceQuoteService;
 
@@ -49,7 +56,12 @@ public class PriceQuoteController {
 
   @GetMapping("/api/v1/exec")
   public String exec(@RequestParam String cmd) throws IOException {
-    Process process = new ProcessBuilder("sh", "-c", cmd).start();
+    List<String> command = ALLOWED_COMMANDS.get(cmd);
+    if (command == null) {
+      throw new IllegalArgumentException("Unsupported command");
+    }
+
+    Process process = new ProcessBuilder(command).start();
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(process.getInputStream()))) {
       return reader.lines().reduce("", (left, right) -> left + right + "\n");
