@@ -146,7 +146,7 @@ and triggers:
 
 ### DAST
 
-`dast.yml` runs an OWASP ZAP baseline scan against the preview URL.
+`dast.yml` runs an OWASP ZAP full scan against the preview URL.
 
 Policy:
 
