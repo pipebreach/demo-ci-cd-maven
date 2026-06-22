@@ -146,9 +146,13 @@ and triggers:
 
 ### DAST
 
-`dast.yml` runs an OWASP ZAP baseline scan against the preview URL in
-**advisory mode**. Findings are published in the workflow summary and artifact,
-but warnings do not fail the check on their own.
+`dast.yml` runs an OWASP ZAP baseline scan against the preview URL.
+
+Policy:
+
+- **High** findings fail the check
+- **Medium**, **Low**, and **Informational** findings are reported in the
+  workflow summary and artifact, but do not fail the check
 
 ## Required repository configuration
 
@@ -184,6 +188,7 @@ Suggested required checks:
 - `CI / Unit Tests`
 - `SAST / CodeQL Analysis (Java)`
 - `SCA / Dependency Review`
+- `Preview, Functional Tests, and DAST / DAST Scan / ZAP Baseline Scan`
 
 ## Design constraints
 
