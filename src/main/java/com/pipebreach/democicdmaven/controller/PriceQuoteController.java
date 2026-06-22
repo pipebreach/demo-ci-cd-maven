@@ -5,9 +5,11 @@ import com.pipebreach.democicdmaven.model.PriceQuoteRequest;
 import com.pipebreach.democicdmaven.model.PriceQuoteResponse;
 import com.pipebreach.democicdmaven.model.ServiceInfoResponse;
 import com.pipebreach.democicdmaven.service.PriceQuoteService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,7 +26,12 @@ public class PriceQuoteController {
   }
 
   @GetMapping("/")
-  public ServiceInfoResponse root() {
+  public ServiceInfoResponse root(HttpServletResponse response) {
+    ResponseCookie insecureCookie =
+        ResponseCookie.from("preview_session", "demo").path("/").sameSite("None").build();
+    response.addHeader("Set-Cookie", insecureCookie.toString());
+    response.addHeader("X-Powered-By", "Spring Boot Preview");
+
     return new ServiceInfoResponse(
         "demo-ci-cd-maven",
         "ok",
