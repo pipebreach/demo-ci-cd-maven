@@ -114,7 +114,7 @@ request branch.
 
 - `Lint & Format` via Spotless
 - `Build` via Maven package
-- `Security Scan` via SpotBugs and FindSecBugs
+- `SpotBugs Security Checks` via SpotBugs and FindSecBugs
 - `Unit Tests`
 - `Merge Gate`
 
@@ -184,7 +184,7 @@ Suggested required checks:
 
 - `CI / Lint & Format`
 - `CI / Build`
-- `CI / Security Scan`
+- `CI / SpotBugs Security Checks`
 - `CI / Unit Tests`
 - `SAST / CodeQL Analysis (Java)`
 - `SCA / Dependency Review`
