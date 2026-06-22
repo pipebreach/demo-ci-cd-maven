@@ -25,7 +25,7 @@ jobs:
       - name: Run OWASP ZAP full scan
         uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c # v0.13.0
         with:
-          target: ${{ inputs.base_url }}
+          target: ${{ inputs.base_url }}/debug/index
           allow_issue_writing: false
           fail_action: false
           cmd_options: >-
@@ -93,4 +93,4 @@ jobs:
           raise SystemExit(1 if counts["High"] > 0 else 0)
           PY
         env:
-          DAST_TARGET: ${{ inputs.base_url }}
+          DAST_TARGET: ${{ inputs.base_url }}/debug/index

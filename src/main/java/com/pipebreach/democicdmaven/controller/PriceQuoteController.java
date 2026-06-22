@@ -6,11 +6,16 @@ import com.pipebreach.democicdmaven.model.PriceQuoteResponse;
 import com.pipebreach.democicdmaven.model.ServiceInfoResponse;
 import com.pipebreach.democicdmaven.service.PriceQuoteService;
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,6 +40,26 @@ public class PriceQuoteController {
   @GetMapping("/health")
   public HealthResponse health() {
     return new HealthResponse("ok");
+  }
+
+  @GetMapping(value = "/debug/index", produces = MediaType.TEXT_HTML_VALUE)
+  public String debugIndex() {
+    return """
+        <html>
+          <body>
+            <h1>Debug Tools</h1>
+            <form action="/api/v1/download" method="get">
+              <input type="text" name="path" value="README.md" />
+              <button type="submit">Download</button>
+            </form>
+          </body>
+        </html>
+        """;
+  }
+
+  @GetMapping(value = "/api/v1/download", produces = MediaType.TEXT_PLAIN_VALUE)
+  public String download(@RequestParam String path) throws IOException {
+    return Files.readString(Path.of(path));
   }
 
   @PostMapping("/api/v1/quotes")
