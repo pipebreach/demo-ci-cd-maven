@@ -196,3 +196,5 @@ The implementation is intentionally compact:
 
 Those trade-offs keep the codebase small while still allowing meaningful build,
 test, SAST, SCA, preview, and DAST validation.
+
+Test CI
