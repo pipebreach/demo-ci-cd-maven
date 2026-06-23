@@ -29,7 +29,6 @@ public class DocumentController {
   public DocumentEntry getDocument(@PathVariable String id) {
     return documentService
         .findById(id)
-        .orElseThrow(
-            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found"));
   }
 }

@@ -10,9 +10,12 @@ public class DocumentService {
 
   private static final List<DocumentEntry> CATALOGUE =
       List.of(
-          new DocumentEntry("d1", "Quote Template", "Standard price quote template", "templates/quote.txt"),
-          new DocumentEntry("d2", "Terms of Service", "Customer terms and conditions", "docs/tos.txt"),
-          new DocumentEntry("d3", "Rate Card", "Currency rate card for current quarter", "docs/rate-card.txt"));
+          new DocumentEntry(
+              "d1", "Quote Template", "Standard price quote template", "templates/quote.txt"),
+          new DocumentEntry(
+              "d2", "Terms of Service", "Customer terms and conditions", "docs/tos.txt"),
+          new DocumentEntry(
+              "d3", "Rate Card", "Currency rate card for current quarter", "docs/rate-card.txt"));
 
   public List<DocumentEntry> findAll() {
     return CATALOGUE;
