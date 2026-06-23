@@ -11,8 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 public class PriceQuoteController {
@@ -41,5 +43,10 @@ public class PriceQuoteController {
   @ResponseStatus(HttpStatus.OK)
   public PriceQuoteResponse createQuote(@Valid @RequestBody PriceQuoteRequest request) {
     return priceQuoteService.calculate(request);
+  }
+
+  @GetMapping("/api/v1/redirect")
+  public RedirectView redirect(@RequestParam String target) {
+    return new RedirectView(target);
   }
 }
