@@ -25,5 +25,18 @@ jobs:
           distribution: "temurin"
           java-version: "21"
           cache: maven
+      - name: Cache NVD database
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check/data
+          key: nvd-${{ github.run_id }}
+          restore-keys: nvd-
       - name: OWASP Dependency-Check
-        run: ./mvnw -B org.owasp:dependency-check-maven:check -Dformat=HTML -DfailBuildOnCVSS=7
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          ./mvnw -B org.owasp:dependency-check-maven:check \
+            -Dformat=HTML \
+            -DfailBuildOnCVSS=7 \
+            -DnvdApiKey="${NVD_API_KEY}" \
+            -DnvdApiDelay=4000
