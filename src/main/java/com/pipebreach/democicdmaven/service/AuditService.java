@@ -5,14 +5,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuditService {
 
-  private static final Logger logger = LogManager.getLogger(AuditService.class);
+  private static final Logger logger = LoggerFactory.getLogger(AuditService.class);
 
   private final List<AuditEntry> entries = Collections.synchronizedList(new ArrayList<>());
 
