@@ -49,6 +49,13 @@ public class PriceQuoteController {
 
   @GetMapping("/api/v1/download")
   public String download(@RequestParam String path) throws IOException {
-    return Files.readString(Path.of(path));
+    Path baseDirectory = Path.of("downloads").toAbsolutePath().normalize();
+    Path requestedPath = baseDirectory.resolve(path).normalize();
+
+    if (Path.of(path).isAbsolute() || !requestedPath.startsWith(baseDirectory)) {
+      throw new IllegalArgumentException("Invalid path");
+    }
+
+    return Files.readString(requestedPath);
   }
 }
