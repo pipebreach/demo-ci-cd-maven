@@ -5,6 +5,7 @@ import com.pipebreach.democicdmaven.model.PriceQuoteRequest;
 import com.pipebreach.democicdmaven.model.PriceQuoteResponse;
 import com.pipebreach.democicdmaven.model.ServiceInfoResponse;
 import com.pipebreach.democicdmaven.service.PriceQuoteService;
+import com.pipebreach.democicdmaven.service.ReportService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -18,9 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PriceQuoteController {
 
   private final PriceQuoteService priceQuoteService;
+  private final ReportService reportService;
 
-  public PriceQuoteController(PriceQuoteService priceQuoteService) {
+  public PriceQuoteController(PriceQuoteService priceQuoteService, ReportService reportService) {
     this.priceQuoteService = priceQuoteService;
+    this.reportService = reportService;
   }
 
   @GetMapping("/")
@@ -29,7 +32,12 @@ public class PriceQuoteController {
         "demo-ci-cd-maven",
         "ok",
         "0.0.1-SNAPSHOT",
-        List.of("GET /", "GET /health", "POST /api/v1/quotes"));
+        List.of(
+            "GET /",
+            "GET /health",
+            "POST /api/v1/quotes",
+            "GET /api/v1/reports",
+            "GET /api/v1/reports/export"));
   }
 
   @GetMapping("/health")
@@ -40,6 +48,8 @@ public class PriceQuoteController {
   @PostMapping("/api/v1/quotes")
   @ResponseStatus(HttpStatus.OK)
   public PriceQuoteResponse createQuote(@Valid @RequestBody PriceQuoteRequest request) {
-    return priceQuoteService.calculate(request);
+    PriceQuoteResponse response = priceQuoteService.calculate(request);
+    reportService.record(response);
+    return response;
   }
 }
