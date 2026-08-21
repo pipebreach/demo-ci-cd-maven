@@ -29,7 +29,12 @@ public class PriceQuoteController {
         "demo-ci-cd-maven",
         "ok",
         "0.0.1-SNAPSHOT",
-        List.of("GET /", "GET /health", "POST /api/v1/quotes"));
+        List.of(
+            "GET /",
+            "GET /health",
+            "POST /api/v1/quotes",
+            "GET /api/v1/discount-rules",
+            "GET /api/v1/discount-rules?currency=USD"));
   }
 
   @GetMapping("/health")
